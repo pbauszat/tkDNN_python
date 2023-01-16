@@ -82,7 +82,11 @@ endif()
 #-------------------------------------------------------------------------------
 # CUDA
 #-------------------------------------------------------------------------------
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" --compiler-options '-fPIC')
+
+# Throws problems on Windows
+if(UNIX)
+	set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" --compiler-options '-fPIC')
+endif()
 
 
 find_package(CUDNN REQUIRED)
@@ -98,6 +102,11 @@ cuda_add_library(kernels SHARED ${tkdnn_CUSRC})
 target_link_libraries(kernels ${CUDA_CUBLAS_LIBRARIES} ${CUDA_LIBRARIES} ${CUDNN_LIBRARIES} yaml-cpp)
 
 
+# Manual setting of TensorRT
+if(NOT NVINFER_INCLUDES)
+	set(NVINFER_INCLUDES ${NVINFER_INCLUDE_DIR})
+endif(NOT NVINFER_INCLUDES)
+message(STATUS "TensorRT NVINFER_INCLUDES: ${NVINFER_INCLUDES}")
 
 #-------------------------------------------------------------------------------
 # External Libraries
