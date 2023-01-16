@@ -248,6 +248,9 @@ target_link_libraries(seg_demo tkDNN)
 add_executable(demoDepth demo/demo/demoDepth.cpp)
 target_link_libraries(demoDepth tkDNN)
 
+add_executable(image_demo demo/demo/image_demo.cpp)
+target_link_libraries(image_demo tkDNN)
+
 #-------------------------------------------------------------------------------
 # Install
 #-------------------------------------------------------------------------------

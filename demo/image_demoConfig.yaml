@@ -1,0 +1,10 @@
+# input and output filenames
+input_filename : "../demo/test_image.png"
+output_filename : "../demo/test_output.png"
+
+# network config
+network_rt_file : "yolo4tiny_fp32.rt"
+ntype : 'y'
+class_count : 80
+batch_size : 1
+conf_thresh : 0.3

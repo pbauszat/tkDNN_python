@@ -1,6 +1,7 @@
 # video input
 input     : "../demo/yolo_test.mp4"
-win_input : "..\\demo\\yolo_test.mp4"
+# win_input : "..\\demo\\yolo_test.mp4"
+win_input : "..\\demo\\test_video.avi"
 
 # network config
 net         : "yolo4tiny_fp32.rt"
@@ -11,4 +12,4 @@ conf_thresh : 0.3
 
 # demo config
 show  : true
-save  : false
+save  : true
