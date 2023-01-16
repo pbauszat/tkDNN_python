@@ -15,8 +15,13 @@
 
 using namespace nvinfer1;
 
+#ifdef __linux__ 
 extern std::mutex gYoloPlugins_mutex;
 extern std::vector<YoloRT*> gYoloPlugins;
+#elif _WIN32
+__declspec(dllimport) extern std::mutex gYoloPlugins_mutex;
+__declspec(dllimport) extern std::vector<YoloRT*> gYoloPlugins;
+#endif
 
 // Logger for info/warning/errors
 class Logger : public ILogger {
