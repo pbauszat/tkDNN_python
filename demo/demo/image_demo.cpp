@@ -48,6 +48,28 @@ int main(int argc, char* argv[]) {
 	std::vector<cv::Mat> input_images{ input_image };
 	network.update(input_images, batch_size);
 
+	// Print the detection results
+	unsigned int batch_index = 0;
+	for (auto const& batch : network.batchDetected) {
+		std::cout << "--- Batch " << batch_index << "---\n";
+		unsigned int detection_index = 0;
+		for (auto const& detection : batch) {
+			std::cout << "Detection " << detection_index << ":\n";
+			std::cout << "- Class ID: " << detection.cl << "\n";
+			std::cout << "- Bounding Box: " << detection.x << " " << detection.y << " " << detection.w << " " << detection.h << "\n";
+			std::cout << "- Probability: " << detection.prob << "\n";
+
+			std::cout << "- Distribution (" << detection.probs.size() << "): ";
+			for (auto const& class_probability : detection.probs) {
+				std::cout << class_probability << " ";
+			}
+			std::cout << "\n";
+
+			detection_index++;
+		}
+		batch_index++;
+	}
+
 	// Draw the results on a new image
 	cv::Mat output_image = input_image.clone();
 	std::vector<cv::Mat> output_images{ output_image };
