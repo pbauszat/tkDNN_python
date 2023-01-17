@@ -109,6 +109,20 @@ endif(NOT NVINFER_INCLUDES)
 message(STATUS "TensorRT NVINFER_INCLUDES: ${NVINFER_INCLUDES}")
 
 #-------------------------------------------------------------------------------
+# PYTHON
+#-------------------------------------------------------------------------------
+
+find_package (Python COMPONENTS Interpreter Development)
+if (Python_FOUND)
+	message(STATUS "Found Python.")
+	message(STATUS "Python Version: ${Python_VERSION}")
+	message(STATUS "Python Path: ${Python_INCLUDE_DIRS}")
+	message(STATUS "Python Path: ${Python_LIBRARIES}")
+else()
+	message(STATUS "Could not find Python.")
+endif()
+
+#-------------------------------------------------------------------------------
 # External Libraries
 #-------------------------------------------------------------------------------
 find_package(Eigen3 REQUIRED)
@@ -134,6 +148,10 @@ endif()
 # endif()
 
 # gives problems in cross-compiling, probably malformed cmake config
+
+# PyBind
+# set(PYBIND_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/extern/pybind11/include)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/extern/pybind11)
 
 #-------------------------------------------------------------------------------
 # Build Libraries
@@ -225,6 +243,11 @@ target_link_libraries(test_monodepth2_640 tkDNN)
 add_executable(test_monodepth2_1024 tests/monodepth2/monodepth2_1024.cpp)
 target_link_libraries(test_monodepth2_1024 tkDNN)
 
+# Python Wrapping
+if (Python_FOUND)
+	pybind11_add_module(pythonwrapper src/pythonwrapper/PythonWrapper.cpp)
+	target_link_libraries(pythonwrapper PRIVATE tkDNN)
+endif()
 
 # DEMOS
 add_executable(test_rtinference tests/test_rtinference/rtinference.cpp)
