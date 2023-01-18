@@ -47,8 +47,9 @@ def main():
         images.append(image)
 
     # Detect objects (run multiple times to get cached performance)
+    network_rt_file = "../build/yolo4tiny_fp32.rt"  # or use "../build/mobilenetv2ssd_fp32.rt" for MobileNet
     class_count = 80
-    detector = pythonwrapper.ObjectDetector("../build/yolo4tiny_fp32.rt", class_count, max_batch_size=2)
+    detector = pythonwrapper.ObjectDetector(network_rt_file, class_count, max_batch_size=2)
     detections = None
     for _ in range(10):
         start_time = timeit.default_timer()

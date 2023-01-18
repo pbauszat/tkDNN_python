@@ -2,6 +2,7 @@
 // A Python Wrapper around the tkdnn detection network.
 //
 #include <iostream>
+#include <memory>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -9,6 +10,9 @@
 namespace py = pybind11;
 
 #include "opencv2/opencv.hpp"
+
+#include "CenternetDetection.h"
+#include "MobilenetDetection.h"
 #include "Yolo3Detection.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -37,11 +41,29 @@ class ObjectDetector {
     typedef py::array_t<uint8_t, py::array::c_style | py::array::forcecast> Image;
 
 public:
-    ObjectDetector(std::string const& network_rt_filename, int class_count = 80, float confidence_threshold = 0.3f, int max_batch_size = 1) 
-        : _network_rt_filename(network_rt_filename), _class_count(class_count), _confidence_threshold(confidence_threshold), _max_batch_size(max_batch_size) {
-        // Create the internal detection network
-        // todo: Add support for other networks besides YOLO
-        _network.init(network_rt_filename, class_count, max_batch_size, confidence_threshold);
+    enum Type {
+        Yolo = 0,
+        CenterNet = 1,
+        MobileNet = 2,
+    };
+
+public:
+    ObjectDetector(std::string const& network_rt_filename, int class_count = 80, float confidence_threshold = 0.3f, int max_batch_size = 1, Type type = Type::Yolo)
+        : _network_rt_filename(network_rt_filename), _class_count(class_count), _confidence_threshold(confidence_threshold), _max_batch_size(max_batch_size), _type(type) {
+        // Create the internal detection network dependeing on the type
+        int fixed_class_count = class_count;
+        if (type == Type::CenterNet) {
+            _network = std::make_unique<tk::dnn::CenternetDetection>();
+        }
+        else if (type == Type::MobileNet) {
+            _network = std::make_unique<tk::dnn::MobilenetDetection>();
+            fixed_class_count++;
+        }
+        else {
+            _network = std::make_unique<tk::dnn::Yolo3Detection>();
+        }
+        // Initialize the network
+        _network->init(network_rt_filename, fixed_class_count, max_batch_size, confidence_threshold);
         std::cout << "Network initialization successful.\n";
     }
 
@@ -69,16 +91,16 @@ public:
 
         // Perform inference
         int image_count = static_cast<int>(frames.size());
-        _network.update(frames, image_count);
+        _network->update(frames, image_count);
 
         // Convert detections
         std::vector<std::vector<Detection>> detections;
         for (int i = 0; i < image_count; ++i) {
             std::vector<Detection> image_detections;
-            for (auto const& network_detection : _network.batchDetected[i]) {
+            for (auto const& network_detection : _network->batchDetected[i]) {
                 Detection detection;
                 detection.class_id = network_detection.cl;
-                detection.class_name = _network.classesNames[network_detection.cl];
+                detection.class_name = _network->classesNames[network_detection.cl];
                 detection.box = BoundingBox{ network_detection.x, network_detection.y, network_detection.w, network_detection.h };
                 detection.probability = network_detection.prob;
                 image_detections.push_back(detection);
@@ -93,7 +115,8 @@ private:
     int _class_count{ 80 };
     float _confidence_threshold{ 0.3f };
     int _max_batch_size{ 1 };
-    tk::dnn::Yolo3Detection _network;
+    Type _type{ Type::Yolo };
+    std::unique_ptr<tk::dnn::DetectionNN> _network;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -127,12 +150,21 @@ PYBIND11_MODULE(pythonwrapper, m) {
             }
         );
 
-    py::class_<ObjectDetector>(m, "ObjectDetector")
-        .def(py::init<std::string const&, int, float, int>(), py::arg("network_rt_filename"), py::arg("class_count") = 80, py::arg("confidence_threshold") = 0.3f, py::arg("max_batch_size") = 1)
+    py::class_<ObjectDetector> object_detector(m, "ObjectDetector");
+
+    py::enum_<ObjectDetector::Type>(object_detector, "Type")
+        .value("Yolo", ObjectDetector::Type::Yolo)
+        .value("CenterNet", ObjectDetector::Type::CenterNet)
+        .value("MobileNet", ObjectDetector::Type::MobileNet)
+        .export_values();
+
+    object_detector
+        .def(py::init<std::string const&, int, float, int, ObjectDetector::Type>(), py::arg("network_rt_filename"), py::arg("class_count") = 80, py::arg("confidence_threshold") = 0.3f, py::arg("max_batch_size") = 1, py::arg("type") = ObjectDetector::Type::Yolo)
         .def("infer", &ObjectDetector::infer, py::arg("images"))
         .def("__repr__",
             [](const ObjectDetector& _) {
                 return "<pythonwrapper.ObjectDetector>";
             }
         );
+
 }
