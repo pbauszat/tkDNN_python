@@ -3,6 +3,8 @@ A simple demo showcasing the Python wrapping.
 """
 import cv2 as cv
 import numpy as np
+import pathlib
+import timeit
 
 from typing import List
 
@@ -22,7 +24,8 @@ help(pythonwrapper)
 
 def draw_detections(image: np.ndarray, detections: List[pythonwrapper.Detection], class_count: int) -> np.ndarray:
     output_image = image.copy()
-    colors = np.random.uniform(0, 255, size=(class_count, 3))
+    rng = np.random.default_rng(123456789)
+    colors = rng.uniform(0, 255, size=(class_count, 3))
     for detection in detections:
         top_left = int(detection.box.x), int(detection.box.y)
         bottom_right = int(detection.box.x + detection.box.width), int(detection.box.y + detection.box.height)
@@ -34,25 +37,39 @@ def draw_detections(image: np.ndarray, detections: List[pythonwrapper.Detection]
 
 
 def main():
-    # Load input image
-    input_image = cv.imread("test_image.png", cv.IMREAD_COLOR)
-    assert isinstance(input_image, np.ndarray)
-    assert input_image.dtype == np.uint8
+    # Load test images
+    image_files = ["frame400_image.png", "frame700_image.png"]
+    images = list()
+    for filename in image_files:
+        image = cv.imread(filename, cv.IMREAD_COLOR)
+        assert isinstance(image, np.ndarray)
+        assert image.dtype == np.uint8
+        images.append(image)
 
-    # Detect objects
+    # Detect objects (run multiple times to get cached performance)
     class_count = 80
-    detector = pythonwrapper.ObjectDetector("../build/yolo4tiny_fp32.rt", class_count)
-    detections = detector.infer([input_image])
-    print(detections)
+    detector = pythonwrapper.ObjectDetector("../build/yolo4tiny_fp32.rt", class_count, max_batch_size=2)
+    detections = None
+    for _ in range(10):
+        start_time = timeit.default_timer()
+        detections = detector.infer(images)
+        end_time = timeit.default_timer()
+        print("Inference time: %.1f ms" % (1000 * (end_time - start_time)))
+    print(f"Detections: {detections}")
 
     # Create resulting image with detections and write it out
-    output_image = draw_detections(input_image, detections, class_count)
-    cv.imwrite("test_output_python.png", output_image)
+    for filename, input_image, image_detections in zip(image_files, images, detections):
+        input_filename = pathlib.Path(filename)
+        output_filename = input_filename.with_name(input_filename.stem + "_output" + input_filename.suffix)
+        output_image = draw_detections(input_image, image_detections, class_count)
+        # Save and show image
+        cv.imwrite(str(output_filename), output_image)
+        cv.imshow(str(output_filename), output_image)
 
-    # Show image
-    cv.imshow("result", output_image)
+    # Close all windows after key is pressed
     cv.waitKey(0)
     cv.destroyAllWindows()
+    print("Done.")
 
 
 if __name__ == "__main__":

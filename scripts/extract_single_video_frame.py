@@ -9,7 +9,7 @@ def main():
     # Read-in arguments
     args = argparse.ArgumentParser()
     args.add_argument("--video_file", type=str, default="../demo/yolo_test.mp4", help="Video filename.")
-    args.add_argument("--frame_index", type=int, default="700", help="Video frame index.")
+    args.add_argument("--frame_index", type=int, default="400", help="Video frame index.")
     args.add_argument("--output_image", type=str, default="../demo/test_image.png", help="Output image.")
     args.add_argument("--output_video", type=str, default="../demo/test_video.avi", help="Single-frame output video.")
     args = args.parse_args()

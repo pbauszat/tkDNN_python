@@ -1,6 +1,6 @@
 # input and output filenames
-input_filename : "../demo/test_image.png"
-output_filename : "../demo/test_output.png"
+input_filename : "../demo/frame400_image.png"
+output_filename : "../demo/frame400_output.png"
 
 # network config
 network_rt_file : "yolo4tiny_fp32.rt"
