@@ -41,7 +41,7 @@ class ObjectDetector {
     typedef py::array_t<uint8_t, py::array::c_style | py::array::forcecast> Image;
 
 public:
-    enum Type {
+    enum class Type {
         Yolo = 0,
         CenterNet = 1,
         MobileNet = 2,
@@ -110,6 +110,26 @@ public:
         return detections;
     }
 
+    std::string const& getNetworkRTFile() const { 
+        return _network_rt_filename; 
+    }
+
+    int getClassCount() const {
+        return _class_count;
+    }
+
+    float getConfidenceThreshold() const {
+        return _confidence_threshold;
+    }
+
+    int getMaxBatchSize() const {
+        return _max_batch_size;
+    }
+
+    Type getType() const {
+        return _type;
+    }
+
 private:
     std::string _network_rt_filename{};
     int _class_count{ 80 };
@@ -161,6 +181,11 @@ PYBIND11_MODULE(pythonwrapper, m) {
     object_detector
         .def(py::init<std::string const&, int, float, int, ObjectDetector::Type>(), py::arg("network_rt_filename"), py::arg("class_count") = 80, py::arg("confidence_threshold") = 0.3f, py::arg("max_batch_size") = 1, py::arg("type") = ObjectDetector::Type::Yolo)
         .def("infer", &ObjectDetector::infer, py::arg("images"))
+        .def_property_readonly("network_rt_file", &ObjectDetector::getNetworkRTFile)
+        .def_property_readonly("class_count", &ObjectDetector::getClassCount)
+        .def_property_readonly("confidence_threshold", &ObjectDetector::getConfidenceThreshold)
+        .def_property_readonly("max_batch_size", &ObjectDetector::getMaxBatchSize)
+        .def_property_readonly("type", &ObjectDetector::getType)
         .def("__repr__",
             [](const ObjectDetector& _) {
                 return "<pythonwrapper.ObjectDetector>";
